@@ -47,15 +47,14 @@ const renderBoard = () => {
                     sourceSquare = null;
                 });
 
-                // Touch events for mobile support
                 pieceElement.addEventListener("touchstart", (e) => {
                     if (pieceElement.draggable) {
                         e.preventDefault(); // Prevent default touch behavior
                         draggedPiece = pieceElement;
-                        sourceSquare = { row: rowindex, col: squareindex };
+                        sourceSquare = getSquareFromTouch(e.changedTouches[0]);
                     }
                 });
-
+                
                 pieceElement.addEventListener("touchend", (e) => {
                     if (draggedPiece) {
                         const touch = e.changedTouches[0];
@@ -67,11 +66,11 @@ const renderBoard = () => {
                         sourceSquare = null;
                     }
                 });
-
+                
                 pieceElement.addEventListener("touchmove", (e) => {
                     e.preventDefault(); // Prevent default touch behavior
                 });
-
+                
                 squareElement.appendChild(pieceElement);
             }
 
@@ -107,13 +106,36 @@ const getSquareFromTouch = (touch) => {
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
 
-    const col = Math.floor(x / (rect.width / 8));
-    const row = 7 - Math.floor(y / (rect.height / 8));
+    const boardWidth = rect.width;
+    const boardHeight = rect.height;
 
-    console.log(`Touch coordinates: (${touch.clientX}, ${touch.clientY}), Board square: (${row}, ${col})`);
+    // Calculate the size of each square
+    const squareSize = Math.min(boardWidth, boardHeight) / 8;
 
-    return { row, col };
+    // Calculate column and row based on touch coordinates
+    let col = Math.floor(x / squareSize);
+    let row = Math.floor(y / squareSize);
+
+    // Adjust row if the board is flipped
+    if (playerRole === 'b') {
+        row = 7 - row; // Reverse the row index for black pieces
+    }
+    if (playerRole === 'b') {
+        col = 7 - col; // Reverse the row index for black pieces
+    }
+
+    // Ensure that the calculated coordinates are within the board's bounds
+    const validCol = Math.max(0, Math.min(7, col));
+    const validRow = Math.max(0, Math.min(7, row));
+
+    console.log(`Touch coordinates: (${touch.clientX}, ${touch.clientY}), Board square: (${validRow}, ${validCol})`);
+
+    return { row: validRow, col: validCol };
 };
+
+
+
+
 
 const handleMove = (source, target) => {
     if (!source || !target) {
@@ -131,6 +153,7 @@ const handleMove = (source, target) => {
 
     socket.emit("move", { move, gameId });
 };
+
 
 const getPieceUnicode = (piece) => {
     const unicodePieces = {
