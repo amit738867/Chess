@@ -1,3 +1,6 @@
+
+require('dotenv').config();
+
 const express = require('express');
 const socket = require('socket.io');
 const http = require('http');
@@ -96,4 +99,4 @@ io.on('connection', (uniquesocket) => {
     });
 });
 
-server.listen(PORT, () => console.log(`Server is started at http://localhost:3000/`));
+server.listen(PORT, () => console.log(`Server is started at http://localhost:${PORT}/`));
