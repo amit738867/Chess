@@ -1,3 +1,4 @@
+// Server-side JavaScript
 
 require('dotenv').config();
 
@@ -80,6 +81,8 @@ io.on('connection', (uniquesocket) => {
         const game = games[gameId];
         if (!game) return;
 
+        console.log(`Received move: ${JSON.stringify(move)}`);
+
         try {
             if (game.turn() === 'w' && uniquesocket.id !== game.players.white) return;
             if (game.turn() === 'b' && uniquesocket.id !== game.players.black) return;
@@ -93,7 +96,7 @@ io.on('connection', (uniquesocket) => {
                 uniquesocket.emit('invalidMove', move);
             }
         } catch (error) {
-            console.log(error);
+            console.log('Error processing move:', error);
             uniquesocket.emit('invalidMove', move);
         }
     });

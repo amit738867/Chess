@@ -1,3 +1,5 @@
+// Client-side JavaScript
+
 const socket = io();
 const chess = new Chess();
 
@@ -45,6 +47,31 @@ const renderBoard = () => {
                     sourceSquare = null;
                 });
 
+                // Touch events for mobile support
+                pieceElement.addEventListener("touchstart", (e) => {
+                    if (pieceElement.draggable) {
+                        e.preventDefault(); // Prevent default touch behavior
+                        draggedPiece = pieceElement;
+                        sourceSquare = { row: rowindex, col: squareindex };
+                    }
+                });
+
+                pieceElement.addEventListener("touchend", (e) => {
+                    if (draggedPiece) {
+                        const touch = e.changedTouches[0];
+                        const targetSquare = getSquareFromTouch(touch);
+                        if (targetSquare) {
+                            handleMove(sourceSquare, targetSquare);
+                        }
+                        draggedPiece = null;
+                        sourceSquare = null;
+                    }
+                });
+
+                pieceElement.addEventListener("touchmove", (e) => {
+                    e.preventDefault(); // Prevent default touch behavior
+                });
+
                 squareElement.appendChild(pieceElement);
             }
 
@@ -75,12 +102,32 @@ const renderBoard = () => {
     }
 };
 
+const getSquareFromTouch = (touch) => {
+    const rect = boardElement.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    const col = Math.floor(x / (rect.width / 8));
+    const row = 7 - Math.floor(y / (rect.height / 8));
+
+    console.log(`Touch coordinates: (${touch.clientX}, ${touch.clientY}), Board square: (${row}, ${col})`);
+
+    return { row, col };
+};
+
 const handleMove = (source, target) => {
+    if (!source || !target) {
+        console.error("Source or target is null");
+        return;
+    }
+
     const move = {
         from: `${String.fromCharCode(97 + source.col)}${8 - source.row}`,
         to: `${String.fromCharCode(97 + target.col)}${8 - target.row}`,
         promotion: 'q',
     };
+
+    console.log("Sending move:", move);
 
     socket.emit("move", { move, gameId });
 };
@@ -116,12 +163,12 @@ socket.on("move", (move) => {
 });
 
 socket.on("invalidMove", (move) => {
-    console.log("Invalid move:", move);
+    console.error("Invalid move received:", move);
     renderBoard();
 });
 
 socket.on("waiting", (message) => {
-    console.log(message);
+    console.log(message); 
 });
 
 socket.on("opponentDisconnected", () => {
